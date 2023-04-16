@@ -1,0 +1,11 @@
+FROM nginx:latest
+
+LABEL maintainer="Hafizhuddin Amin"
+ENV DEBIAN_FRONTEND noninteractive
+ENV TZ=Asia/Jakarta
+
+RUN apt-get update \
+    && apt-get install -y wget vim-tiny net-tools iputils-ping iputils-tracepath \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/* /tmp/* /var/cache/apt/* /var/tmp/* /usr/include

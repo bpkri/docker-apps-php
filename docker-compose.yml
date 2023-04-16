@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  web:
+    image: psik/nginx:dev
+    build: 
+      context: docker/dev
+      dockerfile: Dockerfile-nginx
+    ports:
+      - "127.0.0.1:80:80"
+    volumes:
+      - ./src/:/var/www/html
+      - ./logs/nginx:/var/log/nginx
+      - ./conf/nginx-app1.conf:/etc/nginx/conf.d/app1.conf
+      - ./conf/nginx-app2.conf:/etc/nginx/conf.d/app2.conf
+      - ./conf/nginx-app3.conf:/etc/nginx/conf.d/app3.conf
+
+  php74:
+    image: psik/php:7.4-fpm-dev
+    build: 
+      context: docker/
+      dockerfile: dev/Dockerfile-74
+    volumes:
+      - ./src:/var/www/html
+
+  php81:
+    image: psik/php:8.1-fpm
+    build: 
+      context: docker/
+      dockerfile: dev/Dockerfile-81
+    volumes:
+      - ./src:/var/www/html
+
+  mailpit:
+    image: 'axllent/mailpit:latest'
+    ports:
+      - '${FORWARD_MAILPIT_PORT:-1026}:1025'
+      - '${FORWARD_MAILPIT_DASHBOARD_PORT:-8026}:8025'
+
+  # minio:
+  #   image: 'minio/minio:latest'
+  #   ports:
+  #     - '${FORWARD_MINIO_PORT:-9000}:9000'
+  #     - '${FORWARD_MINIO_CONSOLE_PORT:-8900}:8900'
+  #   environment:
+  #     MINIO_ROOT_USER: 'minio'
+  #     MINIO_ROOT_PASSWORD: 'password'
+  #   volumes:
+  #     - 'minio:/data/minio'
+  #   command: minio server /data/minio --console-address ":8900"
+
+  # redis:
+  #   image: 'redis:alpine'
+  #   ports:
+  #     - '${FORWARD_REDIS_PORT:-6379}:6379'
+  #   volumes:
+  #     - 'redis:/data'
+
+  # meilisearch:
+  #   image: 'getmeili/meilisearch:latest'
+  #   ports:
+  #     - '${FORWARD_MEILISEARCH_PORT:-7700}:7700'
+  #   volumes:
+  #     - 'meilisearch:/meili_data'
+
+  # soketi:
+  #   image: 'quay.io/soketi/soketi:latest-16-alpine'
+  #   environment:
+  #     SOKETI_DEBUG: '${SOKETI_DEBUG:-1}'
+  #     SOKETI_METRICS_SERVER_PORT: '9601'
+  #     SOKETI_DEFAULT_APP_ID: '${PUSHER_APP_ID:-1}'
+  #     SOKETI_DEFAULT_APP_KEY: '${PUSHER_APP_KEY:-mykey}'
+  #     SOKETI_DEFAULT_APP_SECRET: '${PUSHER_APP_SECRET:-mysecret}'
+  #   ports:
+  #       - '${PUSHER_PORT:-6001}:6001'
+  #       - '${PUSHER_METRICS_PORT:-9601}:9601'
+
+volumes:
+  redis:
+  meilisearch:
+  minio:

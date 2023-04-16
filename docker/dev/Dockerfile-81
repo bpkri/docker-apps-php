@@ -1,0 +1,47 @@
+FROM ubuntu:22.04
+
+LABEL maintainer="Hafizhuddin Amin"
+
+WORKDIR /var/www/html
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV TZ=Asia/Jakarta
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+COPY instantclient/instantclient_12_1 /opt/oracle/instantclient_12_1
+
+RUN apt-get update \
+    && apt-get install -y gnupg curl ca-certificates zip unzip libterm-readline-perl-perl \
+    && mkdir -p ~/.gnupg \
+    && chmod 600 ~/.gnupg \
+    && echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf \
+    && apt-key adv --homedir ~/.gnupg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E5267A6C \
+    && apt-key adv --homedir ~/.gnupg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C300EE8C \
+    && echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu jammy main" > /etc/apt/sources.list.d/ppa_ondrej_php.list \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 unixodbc-dev php8.1-common php8.1-dev php8.1-cli php8.1-zip php8.1-curl php8.1-xml php8.1-fpm net-tools php8.1-cli \
+        php8.1-gd php8.1-curl php8.1-redis php8.1-mbstring php8.1-xml php8.1-zip php8.1-bcmath php8.1-opcache php8.1-xdebug php8.1-excimer php8.1-xhprof graphviz \
+        php8.1-intl php8.1-msgpack php8.1-igbinary php8.1-ldap libaio1 \
+    && ln -s /opt/oracle/instantclient_12_1/libclntsh.so.12.1 /opt/oracle/instantclient_12_1/libclntsh.so \
+    && ln -s /opt/oracle/instantclient_12_1/libclntshcore.so.12.1 /opt/oracle/instantclient_12_1/libclntshcore.so \
+    && ln -s /opt/oracle/instantclient_12_1/libocci.so.12.1 /opt/oracle/instantclient_12_1/libocci.so \
+    && echo 'instantclient,/opt/oracle/instantclient_12_1' |  pecl install oci8-3.2.1 \
+    && pecl install sqlsrv-5.11.0 \
+    && pecl install pdo_sqlsrv-5.11.0 \
+    && rm -rf /opt/oracle/instantclient_12_1/sdk \
+    && apt-get -y remove php-pear php8.1-dev unixodbc-dev \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/* /tmp/* /var/cache/apt/* /var/tmp/* /usr/include
+    
+COPY php.ini /etc/php/8.1/cli/conf.d/99-app.ini
+COPY php.ini /etc/php/8.1/fpm/conf.d/99-app.ini
+COPY php-fpm.conf /etc/php/8.1/fpm/pool.d/www.conf
+RUN echo '/opt/oracle/instantclient_12_1' > /etc/ld.so.conf.d/oracle.conf && ldconfig
+RUN php -r "readfile('http://getcomposer.org/installer');" | php -- --install-dir=/usr/bin/ --filename=composer 
+
+EXPOSE 9000
+WORKDIR /var/www/html
+CMD ["php-fpm8.1", "--nodaemonize"]
