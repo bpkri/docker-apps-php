@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+if [ -z "$1" ]; then
+    echo "Usage: source $0 activate appname"
+    return
+fi
+
+APP=$1
+hostname=$(grep -o '(?<=fastcgi_pass )\w+' conf/sites/$APP.conf)
+echo $hostname
+export APP
