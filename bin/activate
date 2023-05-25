@@ -6,6 +6,11 @@ if [ -z "$1" ]; then
 fi
 
 APP=$1
+
+# TODO: determine based on php used on nginx conf
+APP_SERVICE=php81
+
 hostname=$(grep -o '(?<=fastcgi_pass )\w+' conf/sites/$APP.conf)
-echo $hostname
+
 export APP
+export APP_SERVICE

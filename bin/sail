@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 UNAMEOUT="$(uname -s)"
+PWD=$(pwd)
+APPDIR="/var/www/html/${APP}"
 
 # Verify operating system is supported...
 case "${UNAMEOUT}" in
@@ -84,8 +86,6 @@ function display_help {
     echo "  ${GREEN}sail phpunit ...${NC}   Run PHPUnit"
     echo "  ${GREEN}sail pest ...${NC}      Run Pest"
     echo "  ${GREEN}sail pint ...${NC}      Run Pint"
-    echo "  ${GREEN}sail dusk${NC}          Run the Dusk tests (Requires the laravel/dusk package)"
-    echo "  ${GREEN}sail dusk:fails${NC}    Re-run previously failed Dusk tests (Requires the laravel/dusk package)"
     echo
     echo "${YELLOW}Container CLI:${NC}"
     echo "  ${GREEN}sail shell${NC}        Start a shell session within the application container"
@@ -95,10 +95,6 @@ function display_help {
     echo "${YELLOW}Binaries:${NC}"
     echo "  ${GREEN}sail bin ...${NC}   Run Composer binary scripts from the vendor/bin directory"
     echo
-    echo "${YELLOW}Customization:${NC}"
-    echo "  ${GREEN}sail artisan sail:publish${NC}   Publish the Sail configuration files"
-    echo "  ${GREEN}sail build --no-cache${NC}       Rebuild all of the Sail containers"
-
     exit 1
 }
 
@@ -113,7 +109,7 @@ fi
 
 if [ -z "$APP" ]; then
     echo "APP not set. Run: source bin/activate appname"
-    exit -1
+    exit 1
 fi
 
 # Source the ".env" file so Laravel's environment variables are available...
@@ -156,19 +152,18 @@ if [ "$1" == "php" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" "php" "$@")
     else
         sail_is_not_running
     fi
-
 
 # Proxy docker-compose commands to the docker-compose binary on the application container...
 elif [ "$1" == "docker-compose" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" "${DOCKER_COMPOSE[@]}")
     else
         sail_is_not_running
@@ -179,7 +174,7 @@ elif [ "$1" == "composer" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" "composer" "$@")
     else
         sail_is_not_running
@@ -190,8 +185,8 @@ elif [ "$1" == "artisan" ] || [ "$1" == "art" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
-        ARGS+=("$APP_SERVICE" php ./$APP/artisan "$@")
+        ARGS+=("exec" "-w" "${APPDIR}")
+        ARGS+=("$APP_SERVICE" php ./artisan "$@")
     else
         sail_is_not_running
     fi
@@ -201,10 +196,10 @@ elif [ "$1" == "debug" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=(exec -e XDEBUG_SESSION=1)
         [ ! -t 0 ] && ARGS+=(-T)
-        ARGS+=("$APP_SERVICE" php ./$APP/artisan "$@")
+        ARGS+=("$APP_SERVICE" php ./artisan "$@")
     else
         sail_is_not_running
     fi
@@ -214,8 +209,8 @@ elif [ "$1" == "test" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
-        ARGS+=("$APP_SERVICE" php ./$APP/artisan test "$@")
+        ARGS+=("exec" "-w" "${APPDIR}")
+        ARGS+=("$APP_SERVICE" php ./artisan test "$@")
     else
         sail_is_not_running
     fi
@@ -225,7 +220,7 @@ elif [ "$1" == "phpunit" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" php vendor/bin/phpunit "$@")
     else
         sail_is_not_running
@@ -236,7 +231,7 @@ elif [ "$1" == "pest" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" php vendor/bin/pest "$@")
     else
         sail_is_not_running
@@ -248,8 +243,8 @@ elif [ "$1" == "tinker" ] ; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
-        ARGS+=("$APP_SERVICE" php ./$APP/artisan tinker)
+        ARGS+=("exec" "-w" "${APPDIR}")
+        ARGS+=("$APP_SERVICE" php ./artisan tinker)
     else
         sail_is_not_running
     fi
@@ -259,7 +254,7 @@ elif [ "$1" == "node" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" node "$@")
     else
         sail_is_not_running
@@ -270,7 +265,7 @@ elif [ "$1" == "npm" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" npm "$@")
     else
         sail_is_not_running
@@ -291,7 +286,7 @@ elif [ "$1" == "yarn" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         ARGS+=("$APP_SERVICE" yarn "$@")
     else
         sail_is_not_running
@@ -302,7 +297,7 @@ elif [ "$1" == "mysql" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         [ ! -t 0 ] && ARGS+=(-T)
         ARGS+=(mysql bash -c)
         ARGS+=("MYSQL_PWD=\${MYSQL_PASSWORD} mysql -u \${MYSQL_USER} \${MYSQL_DATABASE}")
@@ -315,7 +310,7 @@ elif [ "$1" == "mariadb" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         [ ! -t 0 ] && ARGS+=(-T)
         ARGS+=(mariadb bash -c)
         ARGS+=("MYSQL_PWD=\${MYSQL_PASSWORD} mysql -u \${MYSQL_USER} \${MYSQL_DATABASE}")
@@ -328,7 +323,7 @@ elif [ "$1" == "psql" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         [ ! -t 0 ] && ARGS+=(-T)
         ARGS+=(pgsql bash -c)
         ARGS+=("PGPASSWORD=\${PGPASSWORD} psql -U \${POSTGRES_USER} \${POSTGRES_DB}")
@@ -341,20 +336,8 @@ elif [ "$1" == "shell" ] || [ "$1" == "bash" ]; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
-        ARGS+=("$APP_SERVICE" bash "$@")
-    else
-        sail_is_not_running
-    fi
-
-# Initiate a root user Bash shell within the application container...
-elif [ "$1" == "root-shell" ] || [ "$1" == "root-bash" ]; then
-    shift 1
-
-    if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
-        [ ! -t 0 ] && ARGS+=(-T)
-        ARGS+=("$APP_SERVICE" bash "$@")
+        ARGS+=("exec" "-w" "${APPDIR}")
+        ARGS+=("$APP_SERVICE" "$@")
     else
         sail_is_not_running
     fi
@@ -364,7 +347,7 @@ elif [ "$1" == "redis" ] ; then
     shift 1
 
     if [ "$EXEC" == "yes" ]; then
-        ARGS+=(exec)
+        ARGS+=("exec" "-w" "${APPDIR}")
         [ ! -t 0 ] && ARGS+=(-T)
         ARGS+=(redis redis-cli)
     else
@@ -376,8 +359,10 @@ else
     ARGS+=("$@")
 fi
 
-# echo "${DOCKER_COMPOSE[@]} ${ARGS[@]}"
-# exit 0
+echo "${DOCKER_COMPOSE[@]} ${ARGS[@]}"
+# return
 
 # Run Docker Compose with the defined arguments...
 "${DOCKER_COMPOSE[@]}" "${ARGS[@]}"
+
+cd "$PWD"
