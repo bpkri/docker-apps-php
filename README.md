@@ -40,3 +40,7 @@ $ ./bin/sail --help
 > docker compose build php74 # eg. laravel < 8
 > docker compose build php81
 ```
+
+## Referensi/Tutorial
+
+- [Slide ttg container/k8s/gw dll](https://docs.google.com/presentation/d/1vRfMbceoH00sv1bn2de5HNxmliQQiazzoSmD3gSXblE/edit?usp=sharing)
