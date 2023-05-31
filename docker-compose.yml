@@ -3,6 +3,7 @@ version: "3.9"
 services:
   web:
     image: moby.bpk.go.id/psik/nginx:dev
+    platform: linux/amd64
     build: 
       context: docker/dev
       dockerfile: Dockerfile-nginx
