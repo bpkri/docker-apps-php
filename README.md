@@ -7,14 +7,15 @@ Versi comot-comot Laravel Sail. Bedanya:
 
 ## Configuration
 
-0. determine your project shortname, eg. `eppid`. no space.
-1. put PHP source files inside `./src/eppid/`.
-2. create nginx config file, `conf/sites/eppid.conf`
-3. in `docker-compose.yml`, add new volume entry in `web` service: 
+- determine your project shortname, eg. `eppid`. no space.
+- put PHP source files inside `./src/eppid/`.
+- create nginx config file, `conf/sites/eppid.conf`
+- install [mkcert](https://github.com/FiloSottile/mkcert/releases) then create cert, `cd conf/certs && mkcert eppid.local`
+- in `docker-compose.yml`, add new volume entry in `web` service: 
     `- ./conf/sites/app.conf:/etc/nginx/conf.d/default.conf`
-4. run `docker compose up -d`
-5. in  your local`etc/hosts`, add new line eg. `127.0.0.1  eppid.local`
-6. open http://eppid.local in browser
+- run `docker compose up -d`
+- in  your local`etc/hosts`, add new line eg. `127.0.0.1  eppid.local`
+- open http://eppid.local in browser
 
 ## Development
 
